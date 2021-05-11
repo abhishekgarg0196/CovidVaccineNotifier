@@ -8,27 +8,31 @@ from vaccineAvailabilityNotifier import get_logger
 
 
 def create_email_template(slot):
+    global sessions_time, available_capacity, date, vaccine, html
+    for session in slot['sessions']:
+            date = session['date']
+            available_capacity = session["available_capacity"]
+            vaccine = session['vaccine']
+            sessions_time = session['slots']
     try:
         html = """\
-        <html>
-          <body>
-              Hi, <br/>
-              Vaccine is available on <strong> {} </strong> in the following centers: 
-               <br/><br/>
-            <strong> Center Name: {} </strong> <br/>
-            Location: {}, {}, {} <br/>
-            From {} to {} <br/>
-            Fee Type: {} <br/>
-            Fee: {} rupees <br/>
-            Available Capacity: {} doses available <br/>
-            Vaccine: {} <br/>
-            Slots Available: {} <br/> 
-              <br/> 
-          </body>
-        </html>
-        """.format(slot['date'], slot['name'], slot['block_name'], slot['state_name'],
-                   int(slot['pincode']), slot['from'], slot['to'], slot['fee_type'],
-                   slot['fee'], slot['available_capacity'], slot['vaccine'], slot['slots'])
+               <html>
+                 <body>
+                     Hi, <br/>
+                     Vaccine is available on <strong> {} </strong> in the following centers: 
+                      <br/><br/>
+                   <strong> Center Name: {} </strong> <br/>
+                   Location: {}, {}, {} <br/>
+                   From {} to {} <br/>
+                   Fee Type: {} <br/>
+                   Available Capacity: {} doses available <br/>
+                   Vaccine: {} <br/>
+                   Slots Available: {} <br/> 
+                     <br/> 
+                 </body>
+               </html>""".format(date, slot['name'], slot['block_name'], slot['state_name'],
+                               int(slot['pincode']), slot['from'], slot['to'], slot['fee_type']
+                                 ,available_capacity, vaccine, sessions_time)
     except Exception as e:
         get_logger().error("An error has occurred while drafting  the email {}".format(e))
     return html

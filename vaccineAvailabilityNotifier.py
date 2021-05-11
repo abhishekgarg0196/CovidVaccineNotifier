@@ -8,7 +8,7 @@ import time
 from decouple import config
 import userNotifier
 
-headers = {'Accept': 'application/json', 'Accept-Language': 'hi_IN'}
+headers = {'user-agent': 'temp'}
 
 AGE = config('AGE')
 PINCODE = config('PINCODE')
@@ -42,6 +42,7 @@ def check_availability():
     dates_list = fetch_next_10_days();
     for date in dates_list:
         get_slots_for_date(date)
+    trigger_main()
 
 
 def fetch_next_10_days():
@@ -58,23 +59,26 @@ def get_slots_for_date(date):
     logger = get_logger()
     try:
         COWIN_API = (
-            """https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/findByPin?pincode={}&date={}""".format(
+            """https://cdn-api.co-vin.in/api/v2/appointment/sessions/public/calendarByPin?pincode={}&date={}""".format(
                 PINCODE, date))
         response = requests.get(url=COWIN_API, headers=headers)
         content = json.loads(response.content)
-        if content['sessions'] != 0:
-            for session in content['sessions']:
-                min_age_limit = session["min_age_limit"]
-                available_capacity = session["available_capacity"]
-                if min_age_limit <= int(AGE) & int(available_capacity) > 0:
-                    print(session)
-                    userNotifier.notifyMe(json.loads(json.dumps(session)), EMAIL,
-                                          APPLICATION_PASSWORD)
-                else:
-                    time.sleep(120)
-                    main()
+        if content['centers'] != 0:
+            for center in content['centers']:
+                for session in center['sessions']:
+                    min_age_limit = session['min_age_limit']
+                    available_capacity = session["available_capacity"]
+                    if min_age_limit <= int(AGE) & int(available_capacity) > 0:
+                        userNotifier.notifyMe(json.loads(json.dumps(center)), EMAIL,
+                                              APPLICATION_PASSWORD)
+                        exit(1)
     except Exception as e:
         logger.error("An error has occurred while getting the valid slots : {}".format(e))
+
+
+def trigger_main():
+    time.sleep(120)
+    main()
 
 
 if __name__ == '__main__':
